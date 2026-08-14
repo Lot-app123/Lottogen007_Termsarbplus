@@ -16,3 +16,6 @@ pillow==11.0.0
 
 # Timezone (built-in Python 3.9+, ไม่ต้องติดตั้งเพิ่ม)
 # zoneinfo — stdlib
+
+jinja2
+python-multipart
