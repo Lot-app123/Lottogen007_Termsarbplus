@@ -27,7 +27,7 @@ SECRET_KEY = "change-me-before-deploy-use-openssl-rand-hex-32"
 ALGORITHM  = "HS256"
 TOKEN_EXPIRE_HOURS = 8
 
-USERS = {"admin": "1234"}
+USERS = {"ts11111": "1234"}
 
 # Mapping สำหรับรูปธง
 FLAG_MAPPING = {
@@ -229,7 +229,7 @@ def create_image_bytes(
 
     # 1. วาดชื่อหวย + ธง และ วันที่ (เหมือนเดิม)
     font_title = _get_auto_font(draw, lottery_type, 650, start=110, font_path=text_font_path)
-    title_center_x, title_center_y = 760, 160
+    title_center_x, title_center_y = 760, 150
     draw_text_center(draw, (title_center_x, title_center_y), lottery_type, font_title, fill="#ffffff", stroke_w=5, stroke_fill="#0D2207")
 
     bbox_title = draw.textbbox((0, 0), lottery_type, font=font_title)
@@ -244,8 +244,8 @@ def create_image_bytes(
             w_ratio = target_flag_w / flag_img.width
             target_flag_h = int(flag_img.height * w_ratio)
             flag_img = flag_img.resize((target_flag_w, target_flag_h), Image.Resampling.LANCZOS)
-            spacing = 20
-            flag_y = int(title_center_y - (target_flag_h // 12))
+            spacing = 15
+            flag_y = int(title_center_y - (target_flag_h // 50))
             image.paste(flag_img, (int(title_start_x - target_flag_w - spacing), flag_y), flag_img)
             image.paste(flag_img, (int(title_start_x + text_w + spacing), flag_y), flag_img)
         except FileNotFoundError:
