@@ -540,7 +540,7 @@ header {
       <div class="custom-numbers-wrapper" id="custom-numbers-wrapper">
         <div class="custom-numbers-container">
           
-          <!-- แถวที่ 1: วิ่ง, รูด, วงเล็บ -->
+          <!-- แถวที่ 1: วิ่ง, รูด, เน้น -->
           <div class="input-row">
             <div class="input-group">
               <label>วิ่ง <span>(1 ตัว)</span></label>
@@ -553,24 +553,8 @@ header {
             </div>
             <div class="input-separator"></div>
             <div class="input-group">
-              <label>วงเล็บ <span>(วิ่งรูด)</span></label>
+              <label>เน้น <span>(วิ่งรูด)</span></label>
               <input type="text" name="bracket" maxlength="2" inputmode="numeric" placeholder="สุ่ม">
-            </div>
-          </div>
-
-          <!-- แถวที่ 2: เด่นรอง และ กันเบิ้ล -->
-          <div class="input-row">
-            <div class="input-group">
-              <label>เด่นรอง <span>(2 ตัว)</span></label>
-              <input type="text" name="den_rong" maxlength="2" inputmode="numeric" placeholder="สุ่ม">
-            </div>
-            <div class="input-separator"></div>
-            <div class="input-group">
-              <label>กันเบิ้ล <span>(2 ชุด)</span></label>
-              <div style="display: flex; gap: 5px;">
-                <input type="text" name="double1" maxlength="2" inputmode="numeric" placeholder="เบิ้ลวิ่ง">
-                <input type="text" name="double2" maxlength="2" inputmode="numeric" placeholder="เบิ้ลรูด">
-              </div>
             </div>
           </div>
 
@@ -973,13 +957,13 @@ document.addEventListener("DOMContentLoaded", () => {
       hasValidationError = true;
     }
 
-    // กฎข้อ 2: วงเล็บ ต้องเป็นวิ่งรูดต่อกัน
+    // กฎข้อ 2: เน้น ต้องเป็นวิ่งรูดต่อกัน
     if (brVal) {
       if (!m1Val || !m2Val) {
-        errors.push('กรุณาระบุ วิ่ง และ รูด ก่อนใส่วงเล็บ');
+        errors.push('กรุณาระบุ วิ่ง และ รูด ก่อนใส่เน้น');
         inputs.bracket.style.borderColor = 'var(--red)'; hasValidationError = true;
       } else if (brVal !== `${m1Val}${m2Val}`) {
-        errors.push(`วงเล็บต้องเป็นค่า (${m1Val}${m2Val}) ห้ามสลับตำแหน่ง`);
+        errors.push(`เน้นต้องเป็นค่า (${m1Val}${m2Val}) ห้ามสลับตำแหน่ง`);
         inputs.bracket.style.borderColor = 'var(--red)'; hasValidationError = true;
       }
     }
