@@ -175,6 +175,69 @@ header {
   gap: 10px;
 }
 
+/* ─── Toggle Inputs Button ────────────────────────────── */
+.toggle-inputs-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s, border-color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.toggle-inputs-btn:hover {
+  background: var(--border);
+}
+
+.toggle-inputs-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gold);
+}
+
+.toggle-inputs-title svg {
+  width: 16px;
+  height: 16px;
+}
+
+.chevron-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  transition: transform 0.3s ease, color 0.2s;
+}
+
+.toggle-inputs-btn.active .chevron-icon {
+  transform: rotate(180deg);
+  color: var(--gold);
+}
+
+/* Wrapper สำหรับทำแอนิเมชันเปิด/ปิด */
+.custom-numbers-wrapper {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease;
+}
+
+.custom-numbers-wrapper.expanded {
+  max-height: 600px; /* กะเผื่อความสูงให้ครอบคลุม Input ทั้งหมด */
+  opacity: 1;
+}
+
+.custom-numbers-container {
+  margin-bottom: 15px; /* ย้าย margin มาอยู่ด้านใน */
+}
+
 /* ─── Layout (Desktop First) ─────────────────────────────────── */
 .app {
   display: grid;
@@ -442,7 +505,7 @@ header {
       <div class="image-tab active">ตัวอย่าง</div>
     </div>
     <div class="preview-content">
-      <img src="/static/LottoGen Template1.jpg" class="preview-img" id="preview-img" style="display:block"
+      <img src="/static/T1.jpg" class="preview-img" id="preview-img" style="display:block"
            onerror="this.style.display='none'; document.getElementById('preview-placeholder').style.display='flex'">
       <div class="preview-placeholder" id="preview-placeholder" style="display:none">
         <div class="ph-icon">
@@ -464,47 +527,93 @@ header {
         <span class="selected-badge" id="selected-count">เลือก 0 / 0</span>
       </div>
 
-      <!-- โซนกำหนดเลขแบบละเอียด -->
-      <div class="custom-numbers-container">
-        
-        <!-- แถวที่ 1: วิ่ง/รูด และ เน้นพิเศษ -->
-        <div class="input-row">
+      <!-- ปุ่มเปิด/ปิด โซนกำหนดเลข -->
+      <div class="toggle-inputs-btn" id="toggle-inputs-btn">
+        <div class="toggle-inputs-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+          กำหนดเลขเอง (ตัวเลือก)
+        </div>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+
+      <!-- โซนกำหนดเลขแบบละเอียด (ซ่อนอยู่โดยค่าเริ่มต้น) -->
+      <div class="custom-numbers-wrapper" id="custom-numbers-wrapper">
+        <div class="custom-numbers-container">
+          
+          <!-- แถวที่ 1: วิ่ง, รูด, วงเล็บ -->
+          <div class="input-row">
+            <div class="input-group">
+              <label>วิ่ง <span>(1 ตัว)</span></label>
+              <input type="text" name="main1" maxlength="1" inputmode="numeric" placeholder="สุ่ม">
+            </div>
+            <div class="input-separator">-</div>
+            <div class="input-group">
+              <label>รูด <span>(1 ตัว)</span></label>
+              <input type="text" name="main2" maxlength="1" inputmode="numeric" placeholder="สุ่ม">
+            </div>
+            <div class="input-separator"></div>
+            <div class="input-group">
+              <label>วงเล็บ <span>(วิ่งรูด)</span></label>
+              <input type="text" name="bracket" maxlength="2" inputmode="numeric" placeholder="สุ่ม">
+            </div>
+          </div>
+
+          <!-- แถวที่ 2: เด่นรอง และ กันเบิ้ล -->
+          <div class="input-row">
+            <div class="input-group">
+              <label>เด่นรอง <span>(2 ตัว)</span></label>
+              <input type="text" name="den_rong" maxlength="2" inputmode="numeric" placeholder="สุ่ม">
+            </div>
+            <div class="input-separator"></div>
+            <div class="input-group">
+              <label>กันเบิ้ล <span>(2 ชุด)</span></label>
+              <div style="display: flex; gap: 5px;">
+                <input type="text" name="double1" maxlength="2" inputmode="numeric" placeholder="เบิ้ลวิ่ง">
+                <input type="text" name="double2" maxlength="2" inputmode="numeric" placeholder="เบิ้ลรูด">
+              </div>
+            </div>
+          </div>
+
+          <!-- แถวที่ 2: เด่นรอง และ กันเบิ้ล -->
+          <div class="input-row">
+            <div class="input-group">
+              <label>เด่นรอง <span>(2 ตัว)</span></label>
+              <input type="text" name="den_rong" maxlength="2" inputmode="numeric" placeholder="สุ่ม">
+            </div>
+            <div class="input-separator"></div>
+            <div class="input-group">
+              <label>กันเบิ้ล <span>(2 ชุด)</span></label>
+              <div style="display: flex; gap: 5px;">
+                <input type="text" name="double1" maxlength="2" inputmode="numeric" placeholder="เบิ้ล 1">
+                <input type="text" name="double2" maxlength="2" inputmode="numeric" placeholder="เบิ้ล 2">
+              </div>
+            </div>
+          </div>
+
+          <!-- แถวที่ 3: เลขคู่ 6 ชุด -->
           <div class="input-group">
-            <label>วิ่ง/รูด <span>(1 ตัว)</span></label>
-            <input type="text" name="main1" maxlength="1" inputmode="numeric" placeholder="สุ่ม" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            <label>เลขคู่ 6 ชุด <span>(ชุดละ 2 ตัว)</span></label>
+            <div class="pairs-grid" style="grid-template-columns: repeat(3, 1fr);">
+              <input type="text" name="pair1" maxlength="2" inputmode="numeric" placeholder="สุ่ม">
+              <input type="text" name="pair2" maxlength="2" inputmode="numeric" placeholder="สุ่ม">
+              <input type="text" name="pair3" maxlength="2" inputmode="numeric" placeholder="สุ่ม">
+              <input type="text" name="pair4" maxlength="2" inputmode="numeric" placeholder="สุ่ม">
+              <input type="text" name="pair5" maxlength="2" inputmode="numeric" placeholder="สุ่ม">
+              <input type="text" name="pair6" maxlength="2" inputmode="numeric" placeholder="สุ่ม">
+            </div>
           </div>
-          <div class="input-separator"></div>
+
+          <!-- แถวที่ 4: เลข 3 ตัว 3 ชุด -->
           <div class="input-group">
-            <label>เน้นพิเศษ <span>(2 ตัว)</span></label>
-            <input type="text" name="main2" maxlength="2" inputmode="numeric" placeholder="สุ่ม" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            <label>เลข 3 ตัว <span>(3 ชุด)</span></label>
+            <div class="triples-grid" style="grid-template-columns: repeat(3, 1fr);">
+              <input type="text" name="triple1" maxlength="3" inputmode="numeric" placeholder="สุ่ม">
+              <input type="text" name="triple2" maxlength="3" inputmode="numeric" placeholder="สุ่ม">
+              <input type="text" name="triple3" maxlength="3" inputmode="numeric" placeholder="สุ่ม">
+            </div>
           </div>
-        </div>
 
-        <!-- แถวที่ 2: เลขคู่ 6 ชุด -->
-        <div class="input-group">
-          <label>เลขคู่ 6 ชุด <span>(ชุดละ 2 ตัว)</span></label>
-          <div class="pairs-grid">
-            <input type="text" name="pair1" maxlength="2" inputmode="numeric" placeholder="สุ่ม" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-            <input type="text" name="pair2" maxlength="2" inputmode="numeric" placeholder="สุ่ม" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-            <input type="text" name="pair3" maxlength="2" inputmode="numeric" placeholder="สุ่ม" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-          </div>
         </div>
-
-        <!-- แถวที่ 3: เลข 3 ตัว 2 ชุด -->
-        <div class="input-group">
-          <label>เลข 3 ตัว <span>(2 ชุด)</span></label>
-          <div class="triples-grid">
-            <input type="text" name="triple1" maxlength="3" inputmode="numeric" placeholder="สุ่ม" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-            <input type="text" name="triple2" maxlength="3" inputmode="numeric" placeholder="สุ่ม" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-          </div>
-        </div>
-
-        <!-- แถวที่ 4: เลขวิน -->
-        <div class="input-group">
-          <label>เลขวิน <span>(6 ตัว)</span></label>
-          <input type="text" name="win_num" maxlength="6" inputmode="numeric" placeholder="สุ่ม" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-        </div>
-
       </div>
       <!-- สิ้นสุดโซนกำหนดเลขแบบละเอียด -->
 
@@ -794,19 +903,46 @@ function toggleAll(checked) {
   renderList();
 }
 
-// ─── ระบบตรวจสอบตัวเลขแบบ Real-time (Frontend Validation ตามกฎใหม่) ───
+// ─── ระบบเปิด/ปิด โซนกำหนดตัวเลข ───
 document.addEventListener("DOMContentLoaded", () => {
-  const main1Input = document.querySelector('input[name="main1"]');
-  const main2Input = document.querySelector('input[name="main2"]');
-  const pairInputs = [
-    document.querySelector('input[name="pair1"]'),
-    document.querySelector('input[name="pair2"]'),
-    document.querySelector('input[name="pair3"]')
-  ];
-  const triple1Input = document.querySelector('input[name="triple1"]');
-  const triple2Input = document.querySelector('input[name="triple2"]');
-  const winInput = document.querySelector('input[name="win_num"]');
+  const toggleBtn = document.getElementById('toggle-inputs-btn');
+  const wrapper = document.getElementById('custom-numbers-wrapper');
+
+  toggleBtn.addEventListener('click', () => {
+    toggleBtn.classList.toggle('active');
+    wrapper.classList.toggle('expanded');
+  });
+});
+
+// ─── ระบบตรวจสอบตัวเลขแบบ Real-time (อัปเดตกฎ 5 ข้อ) ───
+document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById('main-form');
+  
+  const inputs = {
+    m1: document.querySelector('input[name="main1"]'),
+    m2: document.querySelector('input[name="main2"]'),
+    bracket: document.querySelector('input[name="bracket"]'),
+    den: document.querySelector('input[name="den_rong"]'),
+    db1: document.querySelector('input[name="double1"]'),
+    db2: document.querySelector('input[name="double2"]'),
+    pairsTop: [
+      document.querySelector('input[name="pair1"]'), document.querySelector('input[name="pair2"]'), document.querySelector('input[name="pair3"]')
+    ],
+    pairsBottom: [
+      document.querySelector('input[name="pair4"]'), document.querySelector('input[name="pair5"]'), document.querySelector('input[name="pair6"]')
+    ],
+    triples: [
+      document.querySelector('input[name="triple1"]'), document.querySelector('input[name="triple2"]'), document.querySelector('input[name="triple3"]')
+    ]
+  };
+
+  const allInputs = [inputs.m1, inputs.m2, inputs.bracket, inputs.den, inputs.db1, inputs.db2, ...inputs.pairsTop, ...inputs.pairsBottom, ...inputs.triples].filter(Boolean);
+
+  allInputs.forEach(input => {
+    input.addEventListener('input', function() {
+      this.value = this.value.replace(/[^0-9]/g, '');
+    });
+  });
 
   const errorMsgBox = document.createElement('div');
   errorMsgBox.style.color = 'var(--red)';
@@ -823,121 +959,80 @@ document.addEventListener("DOMContentLoaded", () => {
   function validateInputs() {
     hasValidationError = false;
     let errors = [];
-    const m1 = main1Input.value;
-    const m2 = main2Input.value;
 
-    // Reset สีขอบ
-    if(main2Input) main2Input.style.borderColor = '';
-    pairInputs.forEach(input => { if(input) input.style.borderColor = ''; });
-    if(triple1Input) triple1Input.style.borderColor = '';
-    if(triple2Input) triple2Input.style.borderColor = '';
-    if(winInput) winInput.style.borderColor = '';
+    allInputs.forEach(input => input.style.borderColor = '');
 
-    // 1. ตรวจสอบ main2 (เน้นพิเศษ)
-    if (m2.length > 0 && m2.length < 2) {
-        hasValidationError = true;
-    }
-    if (m2.length === 2) {
-        if (!m1) {
-            errors.push(`กรุณาระบุ "วิ่ง/รูด" ก่อนพิมพ์ "เน้นพิเศษ"`);
-            main2Input.style.borderColor = 'var(--red)';
-            hasValidationError = true;
-        } else if (!m2.includes(m1)) {
-            errors.push(`เน้นพิเศษ (${m2}) ต้องมีเลขจาก วิ่ง/รูด (${m1})`);
-            main2Input.style.borderColor = 'var(--red)';
-            hasValidationError = true;
-        }
+    const m1Val = inputs.m1 ? inputs.m1.value : '';
+    const m2Val = inputs.m2 ? inputs.m2.value : '';
+    const brVal = inputs.bracket ? inputs.bracket.value : '';
+
+    // กฎข้อ 1: วิ่ง-รูด ห้ามซ้ำกัน
+    if (m1Val && m2Val && m1Val === m2Val) {
+      errors.push('วิ่ง และ รูด ห้ามเป็นเลขเดียวกัน');
+      inputs.m1.style.borderColor = 'var(--red)'; inputs.m2.style.borderColor = 'var(--red)';
+      hasValidationError = true;
     }
 
-    // 2. ตรวจสอบเลขคู่
+    // กฎข้อ 2: วงเล็บ ต้องเป็นวิ่งรูดต่อกัน
+    if (brVal) {
+      if (!m1Val || !m2Val) {
+        errors.push('กรุณาระบุ วิ่ง และ รูด ก่อนใส่วงเล็บ');
+        inputs.bracket.style.borderColor = 'var(--red)'; hasValidationError = true;
+      } else if (brVal !== `${m1Val}${m2Val}`) {
+        errors.push(`วงเล็บต้องเป็นค่า (${m1Val}${m2Val}) ห้ามสลับตำแหน่ง`);
+        inputs.bracket.style.borderColor = 'var(--red)'; hasValidationError = true;
+      }
+    }
+
+    // กฎข้อ 3: กันเบิ้ล ต้องเป็นเลขดับเบิ้ล
+    if (inputs.db1 && inputs.db1.value) {
+      if (!m1Val) { errors.push('ระบุ วิ่ง ก่อนใส่กันเบิ้ล'); inputs.db1.style.borderColor = 'var(--red)'; hasValidationError = true; }
+      else if (inputs.db1.value !== `${m1Val}${m1Val}`) { errors.push(`กันเบิ้ลชุด 1 ต้องเป็น ${m1Val}${m1Val}`); inputs.db1.style.borderColor = 'var(--red)'; hasValidationError = true; }
+    }
+    if (inputs.db2 && inputs.db2.value) {
+      if (!m2Val) { errors.push('ระบุ รูด ก่อนใส่กันเบิ้ล'); inputs.db2.style.borderColor = 'var(--red)'; hasValidationError = true; }
+      else if (inputs.db2.value !== `${m2Val}${m2Val}`) { errors.push(`กันเบิ้ลชุด 2 ต้องเป็น ${m2Val}${m2Val}`); inputs.db2.style.borderColor = 'var(--red)'; hasValidationError = true; }
+    }
+
+    // กฎข้อ 4: เลขคู่ แถวบนขึ้นด้วยวิ่ง / แถวล่างขึ้นด้วยรูด (และห้ามซ้ำ)
     let seenPairs = new Set();
-    pairInputs.forEach((input, index) => {
-      if(!input) return;
+    inputs.pairsTop.forEach((input, idx) => {
       let val = input.value;
-      if (val.length === 1) hasValidationError = true;
       if (val.length === 2) {
-        if (!m1) {
-          errors.push(`กรุณาระบุ วิ่ง/รูด ก่อนพิมพ์เลขคู่`);
-          input.style.borderColor = 'var(--red)';
-          hasValidationError = true;
-        } else if (!val.includes(m1)) {
-          errors.push(`เลขคู่ชุดที่ ${index + 1} ต้องมีเลขจาก วิ่ง/รูด (${m1})`);
-          input.style.borderColor = 'var(--red)';
-          hasValidationError = true;
-        }
-        
-        // --- กฎใหม่: ห้ามซ้ำกับ เน้นพิเศษ (main2) ---
-        if (m2 && val === m2) {
-          errors.push(`เลขคู่ชุดที่ ${index + 1} ห้ามซ้ำกับเน้นพิเศษ (${m2})`);
-          input.style.borderColor = 'var(--red)';
-          hasValidationError = true;
-        }
-        
-        // --- กฎใหม่: ห้ามซ้ำกันเอง ---
-        if (seenPairs.has(val)) {
-          errors.push(`เลขคู่ซ้ำกัน กรุณาเปลี่ยน`);
-          input.style.borderColor = 'var(--red)';
-          hasValidationError = true;
-        }
+        if (!m1Val) { errors.push('ระบุ วิ่ง ก่อนใส่เลขคู่'); input.style.borderColor = 'var(--red)'; hasValidationError = true; }
+        else if (val[0] !== m1Val) { errors.push(`เลขคู่แถวบนชุดที่ ${idx+1} ต้องขึ้นต้นด้วย ${m1Val}`); input.style.borderColor = 'var(--red)'; hasValidationError = true; }
+        if (seenPairs.has(val)) { errors.push(`เลขคู่ซ้ำกัน`); input.style.borderColor = 'var(--red)'; hasValidationError = true; }
+        seenPairs.add(val);
+      }
+    });
+    inputs.pairsBottom.forEach((input, idx) => {
+      let val = input.value;
+      if (val.length === 2) {
+        if (!m2Val) { errors.push('ระบุ รูด ก่อนใส่เลขคู่'); input.style.borderColor = 'var(--red)'; hasValidationError = true; }
+        else if (val[0] !== m2Val) { errors.push(`เลขคู่แถวล่างชุดที่ ${idx+1} ต้องขึ้นต้นด้วย ${m2Val}`); input.style.borderColor = 'var(--red)'; hasValidationError = true; }
+        if (seenPairs.has(val)) { errors.push(`เลขคู่ซ้ำกัน`); input.style.borderColor = 'var(--red)'; hasValidationError = true; }
         seenPairs.add(val);
       }
     });
 
-    // 3. ตรวจสอบเลข 3 ตัว
-    let seenTriples = new Set(); // เพิ่ม Set สำหรับเก็บค่าเลข 3 ตัวที่พิมพ์ไปแล้ว
-    [triple1Input, triple2Input].forEach((input, index) => {
-      if(!input) return;
+    // กฎข้อ 5: เลข 3 ตัว ต้องมี วิ่ง หรือ รูด เป็นส่วนประกอบ
+    let seenTriples = new Set();
+    inputs.triples.forEach((input, idx) => {
       let val = input.value;
-      if (val.length > 0 && val.length < 3) hasValidationError = true;
       if (val.length === 3) {
-        if (!m1) {
-          errors.push(`กรุณาระบุ วิ่ง/รูด ก่อนพิมพ์เลข 3 ตัว`);
-          input.style.borderColor = 'var(--red)';
-          hasValidationError = true;
-        } else if (!val.includes(m1)) {
-          errors.push(`เลข 3 ตัวชุดที่ ${index + 1} ต้องมีเลขจาก วิ่ง/รูด (${m1})`);
-          input.style.borderColor = 'var(--red)';
-          hasValidationError = true;
+        if (!m1Val && !m2Val) { errors.push('ระบุ วิ่ง/รูด ก่อนใส่เลข 3 ตัว'); input.style.borderColor = 'var(--red)'; hasValidationError = true; }
+        else if (!val.includes(m1Val) && !val.includes(m2Val)) {
+          errors.push(`เลข 3 ตัวชุดที่ ${idx+1} ต้องมีเลข วิ่ง(${m1Val}) หรือ รูด(${m2Val}) ร่วมด้วย`);
+          input.style.borderColor = 'var(--red)'; hasValidationError = true;
         }
-        
-        // --- กฎใหม่: ห้ามซ้ำกันเอง ---
-        if (seenTriples.has(val)) {
-          errors.push(`เลข 3 ตัวซ้ำกัน กรุณาเปลี่ยน`);
-          input.style.borderColor = 'var(--red)';
-          hasValidationError = true;
-        }
+        if (seenTriples.has(val)) { errors.push(`เลข 3 ตัวซ้ำกัน`); input.style.borderColor = 'var(--red)'; hasValidationError = true; }
         seenTriples.add(val);
       }
     });
 
-    // 4. ตรวจสอบเลขวิน (ต้องมีเลขจาก เน้นพิเศษ main2)
-    if(winInput) {
-        let wVal = winInput.value;
-        if (wVal.length > 0 && wVal.length < 6) hasValidationError = true;
-        if (wVal.length === 6) {
-          if (!m2 || m2.length < 2) {
-            errors.push(`กรุณาระบุ เน้นพิเศษ ให้ครบ 2 ตัวก่อนพิมพ์เลขวิน`);
-            winInput.style.borderColor = 'var(--red)';
-            hasValidationError = true;
-          } else {
-            // เช็คว่าเลขวิน มีตัวเลขจาก "เน้นพิเศษ" ครบหรือไม่
-            let missing = false;
-            for(let char of m2) {
-                if(!wVal.includes(char)) missing = true;
-            }
-            if (missing) {
-              errors.push(`เลขวินต้องมีตัวเลขจาก เน้นพิเศษ (${m2})`);
-              winInput.style.borderColor = 'var(--red)';
-              hasValidationError = true;
-            }
-          }
-        }
-    }
-
     errorMsgBox.textContent = errors.length > 0 ? errors[0] : '';
   }
 
-  const allInputs = [main1Input, main2Input, ...pairInputs, triple1Input, triple2Input, winInput].filter(Boolean);
   allInputs.forEach(el => el.addEventListener('input', validateInputs));
 
   form.addEventListener('submit', function(e) {

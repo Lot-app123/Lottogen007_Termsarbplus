@@ -4,10 +4,8 @@ import zipfile
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
-from typing import Annotated
-from urllib.parse import quote
 from typing import Annotated, Optional
-
+from urllib.parse import quote
 
 from fastapi import Cookie, Depends, FastAPI, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
@@ -23,15 +21,15 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# ─── Auth config (เปลี่ยน SECRET_KEY ก่อน deploy!) ───────────────────────────
+# ─── Auth config ─────────────────────────────────────────────────────────────
 
 SECRET_KEY = "change-me-before-deploy-use-openssl-rand-hex-32"
 ALGORITHM  = "HS256"
 TOKEN_EXPIRE_HOURS = 8
 
-USERS = {"admin": "1234"}  # TODO: ใช้ DB + bcrypt จริง ๆ ใน production
+USERS = {"admin": "1234"}
 
-# Mapping สำหรับรูปธง (อัปเดตตามชื่อที่มีการรวมรอบ + VIP และ เช้า/บ่าย)
+# Mapping สำหรับรูปธง
 FLAG_MAPPING = {
     # 🇱🇦 ลาว (Laos)
     "ลาว EXTRA": "static/flags/laos.png",
@@ -43,7 +41,7 @@ FLAG_MAPPING = {
     "หวยลาว HD": "static/flags/laos.png",
     "ลาวสตาร์": "static/flags/laos.png",
     "หวยลาวสตาร์": "static/flags/laos.png",
-    "หวยลาวสามัคคี": "static/flags/laos.png",# ปรับตามชื่อใหม่
+    "หวยลาวสามัคคี": "static/flags/laos.png",
     "ลาวสามัคคี": "static/flags/laos.png",
     "ลาวพัฒนา": "static/flags/laos.png",
     "ลาวอาเซียน": "static/flags/laos.png",
@@ -56,7 +54,6 @@ FLAG_MAPPING = {
     "ลาวกาชาด": "static/flags/laos.png",
     "หวยลาวกาชาด": "static/flags/laos.png",
 
-
     # 🇻🇳 เวียดนาม (Vietnam)
     "ฮานอยอาเซียน": "static/flags/vietnam.png",
     "ฮานอย HD": "static/flags/vietnam.png",
@@ -67,7 +64,7 @@ FLAG_MAPPING = {
     "หวยฮานอยกาชาด": "static/flags/vietnam.png",
     "ฮานอยพิเศษ": "static/flags/vietnam.png",
     "ฮานอยสามัคคี": "static/flags/vietnam.png",
-    "ฮานอย": "static/flags/vietnam.png", # ปรับตามชื่อใหม่
+    "ฮานอย": "static/flags/vietnam.png",
     "ฮานอยปกติ": "static/flags/vietnam.png",
     "ฮานอยดึก": "static/flags/vietnam.png",
     "หวยฮานอย": "static/flags/vietnam.png",
@@ -162,11 +159,14 @@ FLAG_MAPPING = {
     "ยูโร": "static/flags/eu.png"
 }
 
+THAI_MONTHS = [
+    "", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+]
 
 def create_token(username: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRE_HOURS)
     return jwt.encode({"sub": username, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
-
 
 def get_current_user(token: str = Cookie(default=None, alias="access_token")) -> str:
     if not token:
@@ -177,27 +177,22 @@ def get_current_user(token: str = Cookie(default=None, alias="access_token")) ->
     except JWTError:
         raise HTTPException(status_code=status.HTTP_307_TEMPORARY_REDIRECT, headers={"Location": "/login"})
 
-
 CurrentUser = Annotated[str, Depends(get_current_user)]
 
-
-# ─── Image/font cache (โหลดครั้งเดียวตอน startup) ───────────────────────────
+# ─── Image/font cache ────────────────────────────────────────────────────────
 
 @lru_cache(maxsize=1)
 def _load_bg() -> Image.Image:
-    """โหลดภาพพื้นหลังครั้งเดียว แล้ว cache ไว้ใน RAM"""
-    return Image.open("static/LottoGen Template1.jpg").convert("RGBA")
+    """โหลดภาพพื้นหลัง T1.jpg ครั้งเดียว"""
+    return Image.open("static/T1.jpg").convert("RGBA")
 
-
-@lru_cache(maxsize=16) # เพิ่มขนาด cache เผื่อโหลดหลายฟอนต์
-def _load_font(size: int, font_path: str = "static/Kanit-SemiBold.ttf") -> ImageFont.FreeTypeFont:
-    """Cache แต่ละขนาดและไฟล์ฟอนต์แยกกัน (ค่าเริ่มต้นคือ COOOPBL สำหรับตัวเลข)"""
+@lru_cache(maxsize=16)
+def _load_font(size: int, font_path: str = "static/Kanit-Light.ttf") -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(font_path, size)
 
-
 def _get_auto_font(draw: ImageDraw.ImageDraw, text: str, max_width: int,
-                   start: int = 50, min_size: int = 20, 
-                   font_path: str = "static/Kanit-SemiBold.ttf") -> ImageFont.FreeTypeFont:
+                   start: int = 70, min_size: int = 30, 
+                   font_path: str = "static/Kanit-Light.ttf") -> ImageFont.FreeTypeFont:
     for size in range(start, min_size - 1, -1):
         font = _load_font(size, font_path)
         w = draw.textbbox((0, 0), text, font=font)[2]
@@ -205,148 +200,129 @@ def _get_auto_font(draw: ImageDraw.ImageDraw, text: str, max_width: int,
             return font
     return _load_font(min_size, font_path)
 
+def draw_text_center(draw: ImageDraw.ImageDraw, xy: tuple[int, int], text: str, font: ImageFont.FreeTypeFont,
+                     fill: str = "#ffffff", stroke_w: int = 2, stroke_fill: str = "#000000") -> None:
+    x_center, y_center = xy
+    bbox = draw.textbbox((0, 0), text, font=font)
+    w = bbox[2] - bbox[0]
+    h = bbox[3] - bbox[1]
+    x = x_center - (w // 2)
+    y = y_center - (h // 2)
+    draw.text((x, y), text, font=font, fill=fill, stroke_width=stroke_w, stroke_fill=stroke_fill)
 
-def _bold_text(draw: ImageDraw.ImageDraw, xy: tuple[int, int], text: str,
-               font: ImageFont.FreeTypeFont, fill: str = "#ffca08", boldness: int = 1) -> None:
-    x, y = xy
-    for dx in range(-boldness, boldness + 1):
-        for dy in range(-boldness, boldness + 1):
-            draw.text((x + dx, y + dy), text, font=font, fill=fill)
-
+# ─── ฟังก์ชันวาดภาพตามรูปแบบ T2 บนแม่แบบ T1 ──────────────────────────────────
 
 def create_image_bytes(
     lottery_type: str, 
     main1: Optional[str] = None, 
     main2: Optional[str] = None,
-    pair1: Optional[str] = None,
-    pair2: Optional[str] = None,
-    pair3: Optional[str] = None,
-    triple1: Optional[str] = None,
-    triple2: Optional[str] = None,
-    win_num: Optional[str] = None
+    bracket: Optional[str] = None,
+    den_rong: Optional[str] = None,
+    pair1: Optional[str] = None, pair2: Optional[str] = None, pair3: Optional[str] = None,
+    pair4: Optional[str] = None, pair5: Optional[str] = None, pair6: Optional[str] = None,
+    triple1: Optional[str] = None, triple2: Optional[str] = None, triple3: Optional[str] = None,
+    double1: Optional[str] = None, double2: Optional[str] = None, win_num: Optional[str] = None
 ) -> bytes:
     image = deepcopy(_load_bg()).convert("RGB")
     draw  = ImageDraw.Draw(image)
+    text_font_path = "static/Kanit-Light.ttf"
 
-    # ─── วันที่และหัวข้อ ──────────────────────────────────────────────────
-    # ปรับ format วันที่เป็น วัน/เดือน (DD/MM) ตามแบบในภาพ image_7a769f.png
-    text_font_path = "static/Kanit-SemiBold.ttf"
-    date_text = datetime.now(ZoneInfo("Asia/Bangkok")).strftime("%d/%m/%y")
-    draw.text((450, 150 ), date_text, font=_load_font(50 ,font_path=text_font_path), fill="#ffffff",stroke_width=2, stroke_fill="#000000") # อาจต้องปรับพิกัด x,y ตามพื้นหลังจริง
+    # 1. วาดชื่อหวย + ธง และ วันที่ (เหมือนเดิม)
+    font_title = _get_auto_font(draw, lottery_type, 650, start=110, font_path=text_font_path)
+    title_center_x, title_center_y = 760, 160
+    draw_text_center(draw, (title_center_x, title_center_y), lottery_type, font_title, fill="#ffffff", stroke_w=5, stroke_fill="#0D2207")
 
-    text_font_path = "static/Kanit-SemiBold.ttf"
-    font_auto = _get_auto_font(draw, lottery_type, image.width - 400, start=70, font_path=text_font_path)
-    bbox = draw.textbbox((0, 0), lottery_type, font=font_auto)
-    text_width = bbox[2] - bbox[0]
-    x_pos = (image.width - text_width) // 2
-    text_start_x = x_pos + 30
-    draw.text((text_start_x, 70), lottery_type, font=font_auto, fill="#f4c66b",stroke_width=3, stroke_fill="#000000")
+    bbox_title = draw.textbbox((0, 0), lottery_type, font=font_title)
+    text_w = bbox_title[2] - bbox_title[0]
+    title_start_x = title_center_x - (text_w // 2)
 
     flag_path = FLAG_MAPPING.get(lottery_type)
     if flag_path:
         try:
-            # โหลดรูปธง
             flag_img = Image.open(flag_path).convert("RGBA")
-            
-            # 1. กำหนดขนาดธง
-            target_flag_width = 100   # ⬅️ ปรับขนาดความกว้างของธงที่นี่
-            w_ratio = target_flag_width / flag_img.width
-            target_flag_height = int(flag_img.height * w_ratio)
-            flag_img = flag_img.resize((target_flag_width, target_flag_height), Image.Resampling.LANCZOS)
-            
-            # 2. กำหนดตำแหน่งที่วางธงให้ต่อท้ายชื่อหวย
-            spacing = 20 # ⬅️ ปรับระยะห่างระหว่างตัวอักษรกับธงได้ที่นี่
-            
-            # คำนวณแกน X: เอาจุดเริ่มต้นข้อความ + ความกว้างข้อความ + ระยะห่าง
-            flag_x = text_start_x + text_width + spacing 
-            flag_y = 95  # ⬅️ แกน Y ยึดตามเดิม (ปรับขึ้นลงให้ตรงกับข้อความได้)
-            
-            # วางรูปธงทับลงไป
-            image.paste(flag_img, (int(flag_x), int(flag_y)), flag_img)
-            
+            target_flag_w = 80
+            w_ratio = target_flag_w / flag_img.width
+            target_flag_h = int(flag_img.height * w_ratio)
+            flag_img = flag_img.resize((target_flag_w, target_flag_h), Image.Resampling.LANCZOS)
+            spacing = 20
+            flag_y = int(title_center_y - (target_flag_h // 12))
+            image.paste(flag_img, (int(title_start_x - target_flag_w - spacing), flag_y), flag_img)
+            image.paste(flag_img, (int(title_start_x + text_w + spacing), flag_y), flag_img)
         except FileNotFoundError:
-            pass # ถ้าหาไฟล์รูปธงไม่เจอ ให้ข้ามการวาดธงไปเลย
+            pass
 
-    # 1. จัดการ Main 1 (วิ่ง/รูด 1 ตัว) และ Main 2 (เน้นพิเศษ 2 ตัว)
+    now = datetime.now(ZoneInfo("Asia/Bangkok"))
+    date_text = f"วันที่ {now.day} {THAI_MONTHS[now.month]} {now.year + 543}"
+    draw_text_center(draw, (760, 280), date_text, _load_font(44, font_path=text_font_path), fill="#ffffff", stroke_w=1, stroke_fill="#000000")
+
+    # 3. จัดการตัวเลข วิ่ง(num1) - รูด(num2) ให้ไม่ซ้ำกัน
     m1 = main1 if main1 and len(main1) == 1 and main1.isdigit() else None
-    m2 = main2 if main2 and len(main2) == 2 and main2.isdigit() else None
+    m2 = main2 if main2 and len(main2) == 1 and main2.isdigit() else None
 
     if m1 and m2:
         num1, num2 = m1, m2
     elif m1:
         num1 = m1
-        avail = [str(i) for i in range(10) if str(i) != num1]
-        num2 = num1 + random.choice(avail)
-        if random.random() > 0.5: num2 = num2[::-1]
+        num2 = random.choice([str(i) for i in range(10) if str(i) != num1])
     elif m2:
         num2 = m2
-        num1 = random.choice(list(num2))
+        num1 = random.choice([str(i) for i in range(10) if str(i) != num2])
     else:
-        n1, n2 = random.sample(range(10), 2)
-        num1 = str(n1)
-        num2 = str(n1) + str(n2)
-        if random.random() > 0.5: num2 = num2[::-1]
+        num1, num2 = random.sample([str(i) for i in range(10)], 2)
 
-    # 2. จัดการ เลขคู่ 3 ชุด
-    def get_or_random_pair(user_input, default_format):
-        if user_input and len(user_input) == 2 and user_input.isdigit():
-            return user_input
-        return default_format
+    # 4. วาดช่อง วิ่ง - รูด และ วงเล็บ (บังคับวงเล็บเป็นวิ่งรูดตามลำดับ)
+    br_val = bracket if bracket and len(bracket) == 2 else f"{num1}{num2}"
+    f_run = _load_font(120, font_path=text_font_path)
+    draw_text_center(draw, (635, 430), f"{num1} - {num2}", f_run, fill="#ffffff", stroke_w=2, stroke_fill="#000000")
+    draw_text_center(draw, (922, 450), f"({br_val})", _load_font(72, font_path=text_font_path), fill="#ffffff", stroke_w=2, stroke_fill="#000000")
 
-    avail_digits = [str(i) for i in range(10) if str(i) not in num2]
-    r1, r2, r3 = random.sample(avail_digits, 3) if len(avail_digits) >= 3 else (random.choice(avail_digits), random.choice(avail_digits), random.choice(avail_digits))
+    # 5. เด่นรอง
+    val_den_rong = den_rong if den_rong and len(den_rong) == 2 else f"1{random.choice([str(i) for i in range(10) if str(i) not in (num1, num2)])}"
+    f_side = _load_font(90, font_path=text_font_path)
+    draw_text_center(draw, (160, 665), val_den_rong, f_side, fill="#ffffff", stroke_w=2, stroke_fill="#000000")
+
+    # 6. กันเบิ้ล (บังคับเบิ้ลวิ่ง และ เบิ้ลรูด)
+    db1 = double1 if double1 and len(double1) == 2 else f"{num1}{num1}"
+    db2 = double2 if double2 and len(double2) == 2 else f"{num2}{num2}"
+    draw_text_center(draw, (1120, 665), db1, f_side, fill="#ffffff", stroke_w=2, stroke_fill="#000000")
+    draw_text_center(draw, (1120, 775), db2, f_side, fill="#ffffff", stroke_w=2, stroke_fill="#000000")
+
+    # 7. เลขคู่ 6 ชุด (แถวบนขึ้นด้วยวิ่ง แถวล่างขึ้นด้วยรูด)
+    def get_pair(user_val, default_val): return user_val if user_val and len(user_val) == 2 else default_val
     
-    pairs_list = [
-        get_or_random_pair(pair1, f"{num1}{r1}"),
-        get_or_random_pair(pair2, f"{num1}{r2}"),
-        get_or_random_pair(pair3, f"{num1}{r3}")
-    ]
-
-    # 3. จัดการ เลข 3 ตัว 2 ชุด
-    def get_or_random_triple(user_input, default_format):
-        if user_input and len(user_input) == 3 and user_input.isdigit():
-            return user_input
-        return default_format
-
-    tr1, tr2, tr3, tr4 = random.sample(avail_digits, 4) if len(avail_digits) >= 4 else (random.choice(avail_digits), random.choice(avail_digits), random.choice(avail_digits), random.choice(avail_digits))
+    r1, r2, r3 = random.sample([str(i) for i in range(10) if str(i) != num1], 3)
+    p1 = get_pair(pair1, f"{num1}{r1}"); p2 = get_pair(pair2, f"{num1}{r2}"); p3 = get_pair(pair3, f"{num1}{r3}")
     
-    triple_list = [
-        get_or_random_triple(triple1, f"{num1}{tr1}{tr2}"),
-        get_or_random_triple(triple2, f"{num1}{tr3}{tr4}")
-    ]
+    r4, r5, r6 = random.sample([str(i) for i in range(10) if str(i) != num2], 3)
+    p4 = get_pair(pair4, f"{num2}{r4}"); p5 = get_pair(pair5, f"{num2}{r5}"); p6 = get_pair(pair6, f"{num2}{r6}")
 
-    # 4. จัดการ เลขวิน 6 ตัว
-    if win_num and len(win_num) == 6 and win_num.isdigit():
-        random_6 = win_num
-    else:
-        needed = list(set(num2))
-        others = [str(i) for i in range(10) if str(i) not in needed]
-        fillers = random.sample(others, 6 - len(needed))
-        six = needed + fillers
-        random.shuffle(six)
-        random_6 = "".join(six)
+    f_pairs = _load_font(95, font_path=text_font_path)
+    draw_text_center(draw, (490, 605), p1, f_pairs, fill="#ffffff", stroke_w=2, stroke_fill="#000000")
+    draw_text_center(draw, (655, 605), p2, f_pairs, fill="#ffffff", stroke_w=2, stroke_fill="#000000")
+    draw_text_center(draw, (820, 605), p3, f_pairs, fill="#ffffff", stroke_w=2, stroke_fill="#000000")
+    draw_text_center(draw, (490, 735), p4, f_pairs, fill="#ffffff", stroke_w=2, stroke_fill="#000000")
+    draw_text_center(draw, (655, 735), p5, f_pairs, fill="#ffffff", stroke_w=2, stroke_fill="#000000")
+    draw_text_center(draw, (820, 735), p6, f_pairs, fill="#ffffff", stroke_w=2, stroke_fill="#000000")
 
-    # ─── วาดผลลัพธ์ลงบนภาพ ────────────────────────────────────────────────
-    f_Superlarge  = _load_font(170)
-    f_large  = _load_font(130)
-    f_medium = _load_font(90)
-    f_small  = _load_font(80)
-    f_Supersmall  = _load_font(70)
-
-    draw.text((415, 360), f"{num1}", font = f_Superlarge, fill="#ffffff",stroke_width=3, stroke_fill="#000000" )
-    draw.text((720, 395), f"{num2}", font = f_large, fill="#920000",stroke_width=2, stroke_fill="#000000")
-    
-    for i, pair in enumerate(pairs_list):
-        draw.text((210 + i * 150, 700), pair, font = f_medium, fill="#f4c66b",stroke_width=2, stroke_fill="#000000")
+    # 8. เลข 3 ตัว (บังคับมี วิ่ง หรือ รูด)
+    def gen_triple():
+        base = random.choice([num1, num2])
+        others = random.sample([str(i) for i in range(10)], 2)
+        res = [base] + others
+        random.shuffle(res)
+        return "".join(res)
         
-    draw.text((720, 665), triple_list[0], font=f_small, fill="#920000",stroke_width=2, stroke_fill="#000000")
-    draw.text((720, 755), triple_list[1], font=f_small, fill="#920000",stroke_width=2, stroke_fill="#000000")
+    t1_val = triple1 if triple1 and len(triple1) == 3 else gen_triple()
+    t2_val = triple2 if triple2 and len(triple2) == 3 else gen_triple()
+    t3_val = triple3 if triple3 and len(triple3) == 3 else gen_triple()
 
-    spaced_random_6 = "   ".join(random_6)
-    draw.text((397, 875), spaced_random_6, font = f_small, fill="#ffffff",stroke_width=2, stroke_fill="#000000") 
+    f_triples = _load_font(92, font_path=text_font_path)
+    draw_text_center(draw, (465, 870), t1_val, f_triples, fill="#ffffff", stroke_w=2, stroke_fill="#000000")
+    draw_text_center(draw, (655, 870), t2_val, f_triples, fill="#ffffff", stroke_w=2, stroke_fill="#000000")
+    draw_text_center(draw, (845, 870), t3_val, f_triples, fill="#ffffff", stroke_w=2, stroke_fill="#000000")
 
     buf = io.BytesIO()
-    image.save(buf, format="JPEG", quality=85, optimize=True)
+    image.save(buf, format="JPEG", quality=90, optimize=True)
     buf.seek(0)
     return buf.read()
 
@@ -358,11 +334,17 @@ async def login_page(request: Request):
 
 @app.post("/login")
 async def login(
+    request: Request,
     username: str = Form(...),
     password: str = Form(...),
 ):
     if USERS.get(username) != password:
-        raise HTTPException(status_code=400, detail="ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง")
+        return templates.TemplateResponse(
+            "login.html", 
+            {"request": request, "error": "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"},
+            status_code=400
+        )
+        
     response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(
         key="access_token",
@@ -379,11 +361,9 @@ async def logout():
     response.delete_cookie("access_token")
     return response
 
-# ─── โค้ดส่วนนี้คือตัวที่หายไป และทำให้เกิด Error 405 Method Not Allowed ───
 @app.get("/", response_class=HTMLResponse)
 async def lottery_page(request: Request, user: CurrentUser):
     return templates.TemplateResponse("index.html", {"request": request, "user": user})
-# ───────────────────────────────────────────────────────────────────────
 
 @app.post("/")
 async def lottery_generate(
@@ -391,54 +371,23 @@ async def lottery_generate(
     lottery_type: list[str] = Form(...),
     main1: Optional[str] = Form(None), 
     main2: Optional[str] = Form(None),
+    bracket: Optional[str] = Form(None),
+    den_rong: Optional[str] = Form(None),
     pair1: Optional[str] = Form(None), 
     pair2: Optional[str] = Form(None), 
     pair3: Optional[str] = Form(None), 
+    pair4: Optional[str] = Form(None), 
+    pair5: Optional[str] = Form(None), 
+    pair6: Optional[str] = Form(None), 
     triple1: Optional[str] = Form(None),
     triple2: Optional[str] = Form(None),
+    triple3: Optional[str] = Form(None),
+    double1: Optional[str] = Form(None),
+    double2: Optional[str] = Form(None),
     win_num: Optional[str] = Form(None), 
 ):
-    # ... โค้ดเดิมของคุณที่ใช้รับค่าและสร้างรูปภาพ ...
     if not lottery_type:
         raise HTTPException(status_code=400, detail="กรุณาเลือกประเภทหวยอย่างน้อย 1 รายการ")
-
-    # --- เริ่มต้นส่วนตรวจสอบเงื่อนไขตัวเลข (Backend Validation) ---
-    if main2 and len(main2) == 2:
-        if not main1:
-            raise HTTPException(status_code=400, detail="กรุณาระบุ วิ่ง/รูด ก่อน")
-        if main1 not in main2:
-            raise HTTPException(status_code=400, detail=f"เน้นพิเศษ ({main2}) ต้องมีเลขจาก วิ่ง/รูด ({main1})")
-
-    seen_pairs = set()
-    for i, p in enumerate([pair1, pair2, pair3], 1):
-        if p and len(p) == 2:
-            if not main1 or main1 not in p:
-                raise HTTPException(status_code=400, detail=f"เลขคู่ชุดที่ {i} ต้องมีเลขจาก วิ่ง/รูด")
-            # --- กฎใหม่: ห้ามซ้ำกับเน้นพิเศษ ---
-            if main2 and p == main2:
-                raise HTTPException(status_code=400, detail=f"เลขคู่ชุดที่ {i} ห้ามซ้ำกับเน้นพิเศษ ({main2})")
-            # --- กฎใหม่: ห้ามซ้ำกันเอง ---
-            if p in seen_pairs:
-                raise HTTPException(status_code=400, detail=f"เลขคู่ซ้ำกัน กรุณาเปลี่ยนเลขใหม่")
-            seen_pairs.add(p)
-
-    seen_triples = set()
-    for i, t in enumerate([triple1, triple2], 1):
-        if t and len(t) == 3:
-            if not main1 or main1 not in t:
-                raise HTTPException(status_code=400, detail=f"เลข 3 ตัวชุดที่ {i} ต้องมีเลขจาก วิ่ง/รูด")
-            # --- กฎใหม่: ห้ามซ้ำกันเอง ---
-            if t in seen_triples:
-                raise HTTPException(status_code=400, detail=f"เลข 3 ตัวซ้ำกัน กรุณาเปลี่ยนเลขใหม่")
-            seen_triples.add(t)
-            
-    if win_num and len(win_num) == 6:
-        if not main2 or len(main2) < 2:
-            raise HTTPException(status_code=400, detail="กรุณาระบุ เน้นพิเศษ ก่อนพิมพ์เลขวิน")
-        for d in main2:
-            if d not in win_num:
-                raise HTTPException(status_code=400, detail=f"เลขวินต้องมีตัวเลขจาก เน้นพิเศษ ({main2})")
-    # --- สิ้นสุดส่วนตรวจสอบเงื่อนไขตัวเลข ---
 
     parsed_items = []
     for lt_data in lottery_type:
@@ -458,7 +407,10 @@ async def lottery_generate(
         filename = f"{time_str.replace(':', '.')}_{name_str}.jpg" if time_str else f"{name_str}.jpg"
         encoded_filename = quote(filename)
         
-        img_bytes = create_image_bytes(name_str, main1, main2, pair1, pair2, pair3, triple1, triple2, win_num)
+        img_bytes = create_image_bytes(
+            name_str, main1, main2, den_rong, pair1, pair2, pair3, pair4, pair5, pair6,
+            triple1, triple2, triple3, double1, double2, win_num
+        )
         return StreamingResponse(
             io.BytesIO(img_bytes),
             media_type="image/jpeg",
@@ -475,7 +427,13 @@ async def lottery_generate(
             time_part = f"{time_str.replace(':', '.')}_" if time_str else ""
             filename = f"{prefix}{time_part}{name_str}.jpg"
             
-            zf.writestr(filename, create_image_bytes(name_str, main1, main2, pair1, pair2, pair3, triple1, triple2, win_num))
+            zf.writestr(
+                filename, 
+                create_image_bytes(
+                    name_str, main1, main2, den_rong, pair1, pair2, pair3, pair4, pair5, pair6,
+                    triple1, triple2, triple3, double1, double2, win_num
+                )
+            )
     zip_buf.seek(0)
 
     return StreamingResponse(
